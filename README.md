@@ -1,1 +1,2 @@
 # Hijri-occasions_in_Gregorian_calendar
+simply the idea is to get this month(hijri) occasions in gregorian calendar, by scraping hijri month occasions from assirat tv channel website + today gregorian-hijri, using beautiful soup library
