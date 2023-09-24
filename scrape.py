@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
-from lookups import Links, Errors, get_hijri_number
+from lookups import Links, Errors, get_hijri_number, next_hijri_month
 import re
 import datetime
 
@@ -33,23 +33,39 @@ def get_today_hijri():
         fourth_number_index = text_full_date.index(numbers[3])
         # extract the text between the 3rd and 4th numbers, which is month name
         month = text_full_date[third_number_index + len(third_number):fourth_number_index].strip()
-        month = 'ربيع الاول'
-        result = {'day':third_number, 'month':month}
+        months = [month]
+        
+        if parallel_gregorian_date(today_hijri=third_number, goal_hijri=29).month == datetime.datetime.now().month:
+            months.append(next_hijri_month(month))
+        result = {'day':int(third_number), 'months':months}
         return result
     else:
         print(Errors.Not_Full_Date_Format)
 
 def get_month_occasions(hijri_date):
-    hijri_month = hijri_date['month']
-    soup = get_soup_body(link=Links.HIJRI_MONTH_PAGE(get_hijri_number(hijri_month)))
-    occasions_list = soup.find_all('span', class_='label label-default')
-
     result = "مناسبات هالشهر:"
+    hijri_months = hijri_date['months']
+    # current hijri month
+    soup = get_soup_body(link=Links.HIJRI_MONTH_PAGE(get_hijri_number(hijri_months[0])))
+    occasions_list = soup.find_all('span', class_='label label-default')
     i = 0
     while i < len(occasions_list):
         hijri_day = occasions_list[i].text
         occasion_text = occasions_list[i+1].text
         gregorian_date = parallel_gregorian_date(today_hijri=hijri_date['day'], goal_hijri=hijri_day)
-        result += f"\n{hijri_day}-{hijri_month} ({gregorian_date}): {occasion_text}"
+        result += f"\n{hijri_day}-{hijri_months[0]} ({gregorian_date}): {occasion_text}"
+        i += 2
+    
+    if len(hijri_date['months'])==1: return result
+
+    # next hijri month
+    soup = get_soup_body(link=Links.HIJRI_MONTH_PAGE(get_hijri_number(hijri_months[1])))
+    occasions_list = soup.find_all('span', class_='label label-default')
+    i = 0
+    while i < len(occasions_list):
+        hijri_day = int(occasions_list[i].text)
+        occasion_text = occasions_list[i+1].text
+        gregorian_date = parallel_gregorian_date(today_hijri= (hijri_date['day'] - 29), goal_hijri=hijri_day)
+        result += f"\n{hijri_day}-{hijri_months[1]} ({gregorian_date} او {gregorian_date.day+1}): {occasion_text}"
         i += 2
     return result
