@@ -35,7 +35,7 @@ def get_today_hijri():
         month = text_full_date[third_number_index + len(third_number):fourth_number_index].strip()
         months = [month]
         
-        if parallel_gregorian_date(today_hijri=third_number, goal_hijri=29).month == datetime.datetime.now().month:
+        if parallel_gregorian_date(today_hijri=third_number, goal_hijri=25).month == datetime.datetime.now().month:
             months.append(next_hijri_month(month))
         result = {'day':int(third_number), 'months':months}
         return result
@@ -43,7 +43,7 @@ def get_today_hijri():
         print(Errors.Not_Full_Date_Format)
 
 def get_month_occasions(hijri_date):
-    result = "مناسبات هالشهر:"
+    result = ":مناسبات هالشهر"
     hijri_months = hijri_date['months']
     # current hijri month
     soup = get_soup_body(link=Links.HIJRI_MONTH_PAGE(get_hijri_number(hijri_months[0])))
@@ -53,7 +53,7 @@ def get_month_occasions(hijri_date):
         hijri_day = occasions_list[i].text
         occasion_text = occasions_list[i+1].text
         gregorian_date = parallel_gregorian_date(today_hijri=hijri_date['day'], goal_hijri=hijri_day)
-        result += f"\n{hijri_day}-{hijri_months[0]} ({gregorian_date}): {occasion_text}"
+        result += f"\n({hijri_day}- {hijri_months[0]}) ({gregorian_date}): {occasion_text}"
         i += 2
     
     if len(hijri_date['months'])==1: return result
