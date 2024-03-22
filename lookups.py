@@ -23,6 +23,4 @@ def get_hijri_number(hijri_month):
 def next_hijri_month(hijri_month):
     months_ordered = ('محرم','صفر','ربيع الاول','ربيع الثاني','جمادى الاول','جمادى الثاني','رجب','شعبان','رمضان','شوال','ذي القعدة','ذي الحجة')
     next_month_index = months_ordered.index(hijri_month) + 1
-    if next_month_index == 12:
-        return months_ordered[0]
-    return months_ordered[next_month_index]
+    return months_ordered[next_month_index % 12]

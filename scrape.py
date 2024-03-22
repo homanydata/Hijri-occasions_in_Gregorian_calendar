@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
+import lxml
 from lookups import Links, Errors, get_hijri_number, next_hijri_month
 import re
 import datetime
@@ -35,6 +36,7 @@ def get_today_hijri():
         month = text_full_date[third_number_index + len(third_number):fourth_number_index].strip()
         months = [month]
         
+        # this condition checks if the hijri month ends sooner than the gregorian, so we will need to check next hijri month also
         if parallel_gregorian_date(today_hijri=third_number, goal_hijri=25).month == datetime.datetime.now().month:
             months.append(next_hijri_month(month))
         result = {'day':int(third_number), 'months':months}
@@ -45,18 +47,22 @@ def get_today_hijri():
 def get_month_occasions(hijri_date):
     result = ":مناسبات هالشهر"
     hijri_months = hijri_date['months']
-    # current hijri month
+    # get current hijri month number, use it to get the suitable link
     soup = get_soup_body(link=Links.HIJRI_MONTH_PAGE(get_hijri_number(hijri_months[0])))
+    # list of day-occasion elements
     occasions_list = soup.find_all('span', class_='label label-default')
     i = 0
     while i < len(occasions_list):
-        hijri_day = occasions_list[i].text
-        occasion_text = occasions_list[i+1].text
-        gregorian_date = parallel_gregorian_date(today_hijri=hijri_date['day'], goal_hijri=hijri_day)
-        result += f"\n({hijri_day}- {hijri_months[0]}) ({gregorian_date}): {occasion_text}"
+        hijri_day = int(occasions_list[i].text)
+        if hijri_day > hijri_date['day']:
+            occasion_text = occasions_list[i+1].text
+            gregorian_date = parallel_gregorian_date(today_hijri=hijri_date['day'], goal_hijri=hijri_day)
+            result += f"\n({hijri_day}- {hijri_months[0]}) ({gregorian_date}): {occasion_text}"
+        # increment 2 since we're reading them 2 by 2, 1st is date & 2nd is occasion title
         i += 2
     
-    if len(hijri_date['months'])==1: return result
+    if len(hijri_date['months']) == 1:
+        return result
 
     # next hijri month
     soup = get_soup_body(link=Links.HIJRI_MONTH_PAGE(get_hijri_number(hijri_months[1])))
@@ -66,6 +72,8 @@ def get_month_occasions(hijri_date):
         hijri_day = int(occasions_list[i].text)
         occasion_text = occasions_list[i+1].text
         gregorian_date = parallel_gregorian_date(today_hijri= (hijri_date['day'] - 29), goal_hijri=hijri_day)
-        result += f"\n{hijri_day}-{hijri_months[1]} ({gregorian_date} او {gregorian_date.day+1}): {occasion_text}"
+        # subtract 29 from today_hijri since we need to count for days left in this month
+        result += f"\n({hijri_day} - {hijri_months[1]}) ({gregorian_date} او {gregorian_date.day+1}): {occasion_text}"
+        # similar to code for first month, except for the condition on occ_day > today, & today_hijri value passed
         i += 2
     return result
